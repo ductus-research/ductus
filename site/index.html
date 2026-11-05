@@ -1,0 +1,938 @@
+<title>Ductus Research</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Ductus is a pen-kinematics measurement platform for clinical research teams: browser-based capture, certified devices, open metric definitions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Concept: o clinică luminoasă, pe crem; secțiuni compacte, fiecare pe banda ei; tableta 3D rămâne piesa centrală */
+:root {
+  --cream: #f5eee3;
+  --paper: #fbf7f0;
+  --sand: #ece1cf;
+  --mocha: #cdb6a3;
+  --mocha-deep: #8c6d58;
+  --ink: #2b211b;
+  --muted: #6f6056;
+  --line: #e2d4c0;
+  --line-mocha: #b89e89;
+  --honey: #b8641a;
+  --honey-soft: #f1dfc4;
+  --sage: #5e7f6e;
+  --font: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--cream); color: var(--ink); font-family: var(--font); font-size: 1rem; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { margin: 0; font-weight: 500; text-wrap: balance; letter-spacing: -0.02em; }
+p { margin: 0; }
+a { color: inherit; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--honey); outline-offset: 3px; border-radius: 8px; }
+
+/* Bara de progres la scroll */
+.progress { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; height: 3px; background: var(--honey); transform-origin: 0 50%; transform: scaleX(0); z-index: 20; }
+
+/* Antet fix, cu secțiunea curentă evidențiată */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--cream); }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: rgba(245, 238, 227, 0.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid transparent; transition: border-color .3s; }
+.top.scrolled { border-bottom-color: var(--line); }
+.top .wrap { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 12px; }
+.logo { font-weight: 600; font-size: 1.08rem; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.logo::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--honey); box-shadow: 0 0 0 4px var(--honey-soft); }
+.logo small { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+.top nav { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); }
+.top nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 6px 13px; border-radius: 999px; transition: color .2s, background .25s; }
+.top nav a:hover { color: var(--ink); }
+.top nav a.active { background: var(--mocha-deep); color: var(--paper); }
+@media (max-width: 760px) { .top nav a:not(.cta) { display: none; } }
+
+/* Etichetă de secțiune */
+.tag { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; background: var(--honey-soft); color: var(--honey); }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Hero */
+.hero { background: radial-gradient(55% 60% at 72% 48%, #fff8ec 0%, transparent 70%), var(--cream); }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); align-items: center; gap: 28px; padding-block: 32px 40px; }
+@media (max-width: 920px) { .hero .wrap { grid-template-columns: minmax(0, 1fr); padding-block: 24px 36px; } }
+.hero h1 { font-size: clamp(2.4rem, 5vw, 4.1rem); line-height: 1.02; margin-top: 16px; }
+.hero h1 span { color: var(--honey); }
+.hero .lede { margin-top: 16px; font-size: 1.06rem; color: var(--muted); max-width: 31em; }
+.actions { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+.facts { margin-top: 24px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.facts div { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+.facts b { display: block; font-weight: 600; font-size: 0.95rem; }
+.facts span { font-size: 0.84rem; color: var(--muted); }
+
+.stage { position: relative; min-width: 0; }
+.stage canvas.gl { display: block; width: 100%; height: clamp(340px, 44vw, 520px); touch-action: none; cursor: crosshair; }
+.stage .fallback { display: block; width: 100%; max-width: 100%; aspect-ratio: 3 / 2; border-radius: 18px; border: 1px solid var(--line); touch-action: none; cursor: crosshair; }
+
+/* Panoul cu metrici live: 4 x 2 */
+.panel { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); border-radius: 16px; background: var(--line); box-shadow: 0 18px 40px -28px rgba(70, 45, 20, 0.35); margin: 4px 0 0; overflow: hidden; }
+@media (max-width: 560px) { .panel { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.panel div { padding: 10px 14px; min-width: 0; background: var(--paper); }
+.panel dt { font-size: 0.7rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.panel dd { margin: 2px 0 0; font-family: var(--mono); font-size: 1.02rem; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.panel dd small { font-size: 0.7rem; color: var(--muted); margin-left: 3px; }
+.panel .q-good { color: var(--sage); }
+.panel .q-fair { color: var(--honey); }
+.panel .q-low { color: #a23b2a; }
+.stage-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
+.mode { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+.mode b { color: var(--honey); font-weight: 500; }
+.btns { display: flex; gap: 8px; }
+.btn { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 500 0.84rem var(--font); padding: 8px 15px; border-radius: 999px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: border-color .2s, background .2s, transform .2s; }
+.btn:hover { border-color: var(--honey); transform: translateY(-1px); }
+.btn-solid { background: var(--mocha-deep); color: var(--paper); border-color: var(--mocha-deep); }
+.btn-solid:hover { background: var(--honey); border-color: var(--honey); }
+
+/* Benzi de secțiune compacte */
+.band { padding-block: 64px; }
+@media (max-width: 720px) { .band { padding-block: 48px; } }
+.band-paper { background: var(--paper); }
+.band-cream { background: var(--cream); }
+.band-mocha { background: var(--mocha); }
+.band-honey { background: var(--honey-soft); }
+.band h2 { font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1.08; margin-top: 12px; }
+.lead { margin-top: 12px; font-size: 1.04rem; color: var(--muted); max-width: 36em; }
+.band-mocha .tag { background: var(--paper); color: var(--mocha-deep); }
+.band-mocha .lead { color: #4a3a30; }
+.band-honey .tag { background: var(--paper); }
+.head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 40px; align-items: end; }
+@media (max-width: 860px) { .head { grid-template-columns: minmax(0, 1fr); } }
+.head .lead { margin-top: 0; }
+
+/* Problema */
+.cards { margin-top: 28px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 960px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--cream); border: 1px solid var(--line); border-radius: 18px; padding: 20px; min-width: 0; transition: transform .3s, box-shadow .3s; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 22px 36px -28px rgba(70, 45, 20, 0.45); }
+.ico { width: 38px; height: 38px; border-radius: 11px; background: var(--honey-soft); display: grid; place-items: center; }
+.ico svg { width: 20px; height: 20px; stroke: var(--honey); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.card h3 { margin-top: 14px; font-size: 1.08rem; }
+.card p { margin-top: 6px; color: var(--muted); font-size: 0.93rem; }
+
+/* Pașii unui studiu: secvență reală */
+.steps-wrap { position: relative; margin-top: 32px; }
+.track { position: absolute; left: 20px; right: 20px; top: 19px; height: 2px; background: rgba(140, 109, 88, 0.3); }
+.track span { display: block; height: 100%; background: var(--mocha-deep); transform-origin: 0 50%; transform: scaleX(0); }
+@media (max-width: 860px) { .track { display: none; } }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; counter-reset: s; }
+@media (max-width: 860px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .steps { grid-template-columns: minmax(0, 1fr); } }
+.steps li { counter-increment: s; position: relative; min-width: 0; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 2px solid var(--mocha-deep); color: var(--mocha-deep); font-family: var(--mono); font-weight: 500; position: relative; z-index: 1; }
+.steps h3 { margin-top: 14px; font-size: 1.15rem; }
+.steps p { margin-top: 6px; color: #4a3a30; font-size: 0.93rem; }
+.steps .who { display: inline-block; margin-top: 10px; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mocha-deep); background: rgba(251, 247, 240, 0.6); padding: 3px 8px; border-radius: 6px; }
+
+/* Sarcini și metrici */
+.tasks { margin-top: 28px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .tasks { grid-template-columns: minmax(0, 1fr); } }
+.task { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 20px; min-width: 0; transition: border-color .25s, transform .25s; }
+.task:hover { border-color: var(--honey); transform: translateY(-2px); }
+.task-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.task h3 { font-size: 1.15rem; }
+.task .dur { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+.task > p { margin-top: 6px; color: var(--muted); font-size: 0.92rem; }
+.task dl { margin: 14px 0 0; display: grid; gap: 0; }
+.task dl div { display: flex; justify-content: space-between; gap: 12px; padding-block: 8px; border-top: 1px solid var(--line); font-size: 0.92rem; }
+.task dt { min-width: 0; }
+.task dd { margin: 0; font-family: var(--mono); color: var(--honey); white-space: nowrap; }
+.capture-row { margin-top: 14px; display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); overflow: hidden; }
+@media (max-width: 760px) { .capture-row { grid-template-columns: minmax(0, 1fr); } }
+.capture-row > div { padding: 14px 18px; border-left: 1px solid var(--line); min-width: 0; }
+@media (max-width: 760px) { .capture-row > div { border-left: 0; border-top: 1px solid var(--line); } .capture-row > div:first-child { border-top: 0; } }
+.capture-row > div:first-child { border-left: 0; background: var(--sand); }
+.capture-row b { display: block; font-weight: 600; }
+.capture-row span { font-size: 0.86rem; color: var(--muted); }
+.capture-row .u { font-family: var(--mono); color: var(--sage); font-size: 0.9rem; }
+
+/* Reproductibil prin design */
+.repro { margin-top: 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
+@media (max-width: 900px) { .repro { grid-template-columns: minmax(0, 1fr); } }
+.pillars { display: grid; gap: 12px; }
+.pillar { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 14px; background: var(--cream); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.pillar h3 { font-size: 1.02rem; }
+.pillar p { margin-top: 4px; color: var(--muted); font-size: 0.92rem; }
+.spec { background: var(--mocha); color: var(--ink); border-radius: 18px; padding: 20px; font-family: var(--mono); font-size: 0.82rem; line-height: 1.65; min-width: 0; display: flex; flex-direction: column; }
+.spec-head { display: flex; justify-content: space-between; gap: 10px; color: #4a3a30; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--line-mocha); margin-bottom: 10px; }
+.spec pre { margin: 0; overflow-x: auto; white-space: pre; }
+.spec .k { color: #7a3f0c; font-weight: 500; }
+.spec .c { color: #5c4a3e; }
+.spec-foot { margin-top: auto; padding-top: 12px; color: #4a3a30; font-family: var(--font); font-size: 0.84rem; }
+
+/* Protocol principal + utilizare în cercetare */
+.duo2 { margin-top: 28px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 900px) { .duo2 { grid-template-columns: minmax(0, 1fr); } }
+.box { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 22px; min-width: 0; }
+.box h3 { font-size: 1.2rem; }
+.box p { margin-top: 8px; color: var(--muted); font-size: 0.95rem; }
+.box ul { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.box li { padding-left: 20px; position: relative; font-size: 0.93rem; }
+.box li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 8px; height: 8px; border-radius: 2px; background: var(--honey); }
+.box.not li::before { background: var(--mocha-deep); }
+.status { display: inline-block; margin-left: 8px; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: var(--honey-soft); color: var(--honey); vertical-align: middle; }
+
+/* Azure */
+.services { margin-top: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 960px) { .services { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .services { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.svc { background: var(--cream); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; transition: background .2s, border-color .2s; }
+.svc:hover { background: var(--paper); border-color: var(--mocha-deep); }
+.svc b { display: block; font-size: 0.9rem; font-weight: 600; }
+.svc span { font-size: 0.8rem; color: var(--muted); }
+.flow { margin-top: 14px; font-family: var(--mono); font-size: 0.8rem; color: var(--muted); overflow-x: auto; white-space: nowrap; padding: 10px 14px; border: 1px dashed var(--line-mocha); border-radius: 12px; }
+.flow b { color: var(--ink); font-weight: 500; }
+
+/* Contact și cod sursă */
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+@media (max-width: 860px) { .duo { grid-template-columns: minmax(0, 1fr); } }
+.duo .box { display: flex; flex-direction: column; gap: 6px; }
+.field { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; }
+.field code { font-family: var(--mono); font-size: 0.95rem; padding: 9px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--cream); user-select: all; overflow-wrap: anywhere; }
+.note { font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
+
+footer { background: var(--mocha); color: #4a3a30; padding-block: 22px 32px; font-size: 0.82rem; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+
+/* Animație la scroll: elementele rămân vizibile, doar urcă ușor în poziție */
+.rv { transform: translateY(22px); transition: transform .7s cubic-bezier(.2, .7, .2, 1); }
+.rv.in { transform: none; }
+@media (prefers-reduced-motion: reduce) { .rv { transform: none; transition: none; } }
+</style>
+
+<!-- ============================================================
+     NUMELE PRODUSULUI: se schimbă din constanta PRODUCT_NAME
+     din scriptul de la final. Schimbați și <title> și meta
+     description de la începutul fișierului.
+     Câmpurile marcate ~example~ se completează de echipă.
+     ============================================================ -->
+
+<div class="progress" id="progress"></div>
+
+<header class="top" id="top-bar">
+  <div class="wrap">
+    <a class="logo" href="#top"><span class="brand">Ductus</span><small>Research</small></a>
+    <nav aria-label="Sections">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#measures">Measures</a>
+      <a href="#reproducible">Reproducibility</a>
+      <a href="#azure">Technology</a>
+      <a class="cta" href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <!-- Hero: teza produsului + tableta 3D pe care se poate desena -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="tag">Pen kinematics for clinical research</span>
+        <h1>Every pen stroke is a <span>measurement.</span></h1>
+        <p class="lede">A measurement platform for research teams in psychiatry and neurology. Run standardized drawing tasks on ordinary tablets, in the browser, and get comparable motor measures across sites and visits.</p>
+        <div class="actions">
+          <a class="btn btn-solid" href="#how">How a study runs</a>
+          <a class="btn" href="#contact">Become a design partner</a>
+        </div>
+        <div class="facts">
+          <div><b>Runs in the browser</b><span>No installs on study devices</span></div>
+          <div><b>Certified per device</b><span>Sampling and calibration checked</span></div>
+          <div><b>Open metric definitions</b><span>Versioned, citable, reproducible</span></div>
+          <div><b>Built for multi-site studies</b><span>Pseudonymous codes, CSV export</span></div>
+        </div>
+      </div>
+      <div class="stage" id="stage">
+        <dl class="panel">
+          <div><dt>Duration</dt><dd id="m-dur">0.0<small>s</small></dd></div>
+          <div><dt>Path</dt><dd id="m-path">0<small>mm</small></dd></div>
+          <div><dt>Mean speed</dt><dd id="m-speed">0<small>mm/s</small></dd></div>
+          <div><dt>Variation</dt><dd id="m-cv">0<small>%</small></dd></div>
+          <div><dt>Pen lifts</dt><dd id="m-lifts">0</dd></div>
+          <div><dt>Time in air</dt><dd id="m-air">0.0<small>s</small></dd></div>
+          <div><dt>Sample rate</dt><dd id="m-rate">0<small>Hz</small></dd></div>
+          <div><dt>Capture quality</dt><dd id="m-quality">–</dd></div>
+        </dl>
+        <div class="stage-bar">
+          <span class="mode" id="mode"><b>DEMO</b> · synthetic trace</span>
+          <div class="btns">
+            <button class="btn" id="btn-clear" type="button">Clear</button>
+            <button class="btn btn-solid" id="btn-demo" type="button">Replay demo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problema -->
+  <section class="band band-paper" id="problem">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <span class="tag rv">The problem</span>
+          <h2 class="rv">Motor side effects are studied with tools that don’t travel.</h2>
+        </div>
+        <p class="lead rv">Psychiatric medication can cause tremor, slowing and shrinking handwriting. Studies that measure these effects still rely on clinician rating scales or desktop software tied to one tablet in one lab.</p>
+      </div>
+      <div class="cards">
+        <div class="card rv">
+          <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/></svg></div>
+          <h3>Rated by eye</h3>
+          <p>Coarse clinical scales depend on who scores them and miss small changes.</p>
+        </div>
+        <div class="card rv">
+          <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+          <h3>Locked to one lab</h3>
+          <p>Desktop tools need installation and specific hardware at every site.</p>
+        </div>
+        <div class="card rv">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 12h4l3-8 4 16 3-8h2"/></svg></div>
+          <h3>Devices differ</h3>
+          <p>Sampling rate and screen size change between tablets, so raw numbers don’t compare.</p>
+        </div>
+        <div class="card rv">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M9 18l-6-6 6-6M15 6l6 6-6 6"/></svg></div>
+          <h3>Metrics are opaque</h3>
+          <p>When the computation is hidden, results are hard to reproduce or publish.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cum se desfășoară un studiu -->
+  <section class="band band-mocha" id="how">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <span class="tag rv">How it works</span>
+          <h2 class="rv">From protocol to dataset in four steps.</h2>
+        </div>
+        <p class="lead rv">The research team keeps ownership of the study, its ethics approval and its participants. <span class="brand">Ductus</span> is the measurement instrument.</p>
+      </div>
+      <div class="steps-wrap" id="steps">
+        <div class="track" aria-hidden="true"><span id="track-fill"></span></div>
+        <ol class="steps">
+          <li class="rv"><h3>Set up the study</h3><p>Choose the task protocol, sites and number of sessions. Participants get pseudonymous codes.</p><span class="who">Research team</span></li>
+          <li class="rv"><h3>Certify each tablet</h3><p>A two-minute check measures sampling rate and timing jitter, then calibrates millimetres with a ruler.</p><span class="who">Site staff</span></li>
+          <li class="rv"><h3>Run sessions</h3><p>The tablet locks to the protocol. Every stylus sample is recorded with a quality score for the session.</p><span class="who">Participant</span></li>
+          <li class="rv"><h3>Analyse and export</h3><p>Metrics are computed with a fixed, versioned definition and exported as CSV for statistical analysis.</p><span class="who">Research team</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ce măsurăm -->
+  <section class="band band-cream" id="measures">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <span class="tag rv">What we measure</span>
+          <h2 class="rv">Three motor tasks. Every measure has a unit.</h2>
+        </div>
+        <p class="lead rv">A short protocol, about five minutes in total, chosen for sensitivity to tremor, slowing and loss of rhythm.</p>
+      </div>
+      <div class="tasks">
+        <article class="task rv">
+          <div class="task-top"><h3>Archimedes spiral</h3><span class="dur">≈ 90 s · both hands</span></div>
+          <p>Tracing a printed spiral from the centre outwards.</p>
+          <dl>
+            <div><dt>Tremor frequency</dt><dd>Hz</dd></div>
+            <div><dt>Tremor amplitude</dt><dd>mm</dd></div>
+            <div><dt>Path regularity</dt><dd>mm</dd></div>
+          </dl>
+        </article>
+        <article class="task rv">
+          <div class="task-top"><h3>Lines between targets</h3><span class="dur">≈ 60 s</span></div>
+          <p>Straight strokes between pairs of dots.</p>
+          <dl>
+            <div><dt>Stroke velocity</dt><dd>mm/s</dd></div>
+            <div><dt>Endpoint accuracy</dt><dd>mm</dd></div>
+            <div><dt>Oscillation at stop</dt><dd>Hz</dd></div>
+          </dl>
+        </article>
+        <article class="task rv">
+          <div class="task-top"><h3>Alternating tapping</h3><span class="dur">2 × 10 s</span></div>
+          <p>Tapping two targets in turn as fast as possible.</p>
+          <dl>
+            <div><dt>Tapping rate</dt><dd>taps/s</dd></div>
+            <div><dt>Rhythm variability</dt><dd>%</dd></div>
+            <div><dt>Decline over time</dt><dd>%</dd></div>
+          </dl>
+        </article>
+      </div>
+      <div class="capture-row rv">
+        <div><b>Capture quality</b><span>Recorded for every session</span></div>
+        <div><span class="u">Hz</span><br><span>Effective sampling rate</span></div>
+        <div><span class="u">ms</span><br><span>Timing jitter between samples</span></div>
+        <div><span class="u">0–100</span><br><span>Session quality score with invalid-session flags</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reproductibilitate -->
+  <section class="band band-paper" id="reproducible">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <span class="tag rv">Reproducible by design</span>
+          <h2 class="rv">Same participant, two tablets, matching numbers.</h2>
+        </div>
+        <p class="lead rv">Results are only useful if another site can get them too. That is why device checks, open definitions and quality flags are built into every session.</p>
+      </div>
+      <div class="repro">
+        <div class="pillars">
+          <div class="pillar rv">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+            <div><h3>Device certification</h3><p>Each tablet passes a sampling and timing check and a ruler calibration before it can join a study.</p></div>
+          </div>
+          <div class="pillar rv">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+            <div><h3>Open, versioned metrics</h3><p>Every measure is defined in an open-source library. Exports record the version used, so results can be cited.</p></div>
+          </div>
+          <div class="pillar rv">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <div><h3>Quality flags</h3><p>A model trained on labelled sessions flags unusable recordings, such as an unfinished task or the hand resting on the screen.</p></div>
+          </div>
+        </div>
+        <div class="spec rv" aria-label="Example metric definition">
+          <div class="spec-head"><span>metrics / tremor_frequency</span><span>v1.0</span></div>
+<pre><span class="c"># Dominant tremor frequency in the spiral task</span>
+<span class="k">input</span>:      spiral trace, resampled to 200 Hz
+<span class="k">signal</span>:     radial deviation from ideal path (mm)
+<span class="k">filter</span>:     band-pass 3–15 Hz, 4th-order Butterworth
+<span class="k">spectrum</span>:   Welch, 2 s windows, 50% overlap
+<span class="k">output</span>:     peak frequency (Hz) + peak power
+<span class="k">valid_if</span>:   capture_quality ≥ 70
+            and trace covers ≥ 3 turns</pre>
+          <p class="spec-foot">Illustrative definition. Published definitions live in the open-source repository.</p>
+        </div>
+      </div>
+      <div class="duo2">
+        <div class="box rv">
+          <h3>Flagship protocol <span class="status">In design</span></h3>
+          <p>Motor side effects of psychiatric medication, designed together with clinical researchers. Sessions are repeated across the study so each participant is compared with their own baseline.</p>
+        </div>
+        <div class="box not rv">
+          <h3>For research use</h3>
+          <ul>
+            <li>Not a medical device and not for diagnosis</li>
+            <li>No treatment recommendations or alerts</li>
+            <li>Used within studies approved by the research team</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tehnologie -->
+  <section class="band band-cream" id="azure">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <span class="tag rv">Technology</span>
+          <h2 class="rv">Built on Microsoft Azure.</h2>
+        </div>
+        <p class="lead rv">Each study is isolated, data stays in an EU region and is encrypted at rest, and participants are identified only by code.</p>
+      </div>
+      <div class="services">
+        <div class="svc rv"><b>Static Web Apps</b><span>Capture app and researcher portal</span></div>
+        <div class="svc rv"><b>Functions</b><span>Session intake and study logic</span></div>
+        <div class="svc rv"><b>Container Apps</b><span>Signal processing service</span></div>
+        <div class="svc rv"><b>Blob Storage</b><span>Raw stylus traces, per study</span></div>
+        <div class="svc rv"><b>Cosmos DB</b><span>Studies, sessions, metrics</span></div>
+        <div class="svc rv"><b>Entra External ID</b><span>Researcher accounts and roles</span></div>
+        <div class="svc rv"><b>Machine Learning</b><span>Quality model, versioned runs</span></div>
+        <div class="svc rv"><b>Key Vault</b><span>Keys and secrets</span></div>
+        <div class="svc rv"><b>Application Insights</b><span>Monitoring and alerts</span></div>
+        <div class="svc rv"><b>Log Analytics</b><span>Audit trail and incidents</span></div>
+      </div>
+      <p class="flow rv" aria-label="Data flow"><b>Tablet</b> → Functions → Blob + Cosmos DB → <b>Container Apps</b> (metrics) → Machine Learning (quality) → <b>Researcher portal</b> → CSV export</p>
+    </div>
+  </section>
+
+  <!-- Contact și cod sursă: câmpuri de completat -->
+  <section class="band band-honey" id="contact">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <span class="tag rv">Get in touch</span>
+          <h2 class="rv">Running a study on motor effects? Let’s talk.</h2>
+        </div>
+        <p class="lead rv">We are looking for research groups to shape the flagship protocol with us as design partners.</p>
+      </div>
+      <div class="duo">
+        <div class="box rv">
+          <h3>Contact</h3>
+          <p>Write to the team about a study, a pilot or the protocol.</p>
+          <div class="field">
+            <code id="mail-text">contact@ductus-research.com</code>
+            <button class="btn btn-solid" id="copy-mail" type="button">Copy</button>
+          </div>
+          <p class="note" id="copy-note" aria-live="polite"></p>
+        </div>
+        <div class="box rv">
+          <h3>Source code</h3>
+          <p>The metric library and the capture app are developed in the open.</p>
+          <div class="field">
+            <a class="btn btn-solid" id="repo-link" href="https://github.com/" target="_blank" rel="noopener">github.com/~example~</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 <span class="brand">Ductus</span>. For research use only. Not a medical device and not for diagnostic use.</span>
+    <span>Microsoft Imagine Cup 2027</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// Numele produsului: schimbați doar aici
+const PRODUCT_NAME = 'Ductus';
+document.querySelectorAll('.brand').forEach(function (el) { el.textContent = PRODUCT_NAME; });
+
+// Buton de copiere a adresei de contact
+document.getElementById('copy-mail').addEventListener('click', function () {
+  const el = document.getElementById('mail-text');
+  const note = document.getElementById('copy-note');
+  const fallback = function () {
+    const r = document.createRange(); r.selectNodeContents(el);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = 'Selected. Press Ctrl+C to copy.';
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(el.textContent).then(function () { note.textContent = 'Copied.'; }, fallback);
+  } else { fallback(); }
+});
+
+// Efecte de scroll: bara de progres, secțiunea activă în meniu, linia pașilor, apariția elementelor
+(function () {
+  const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const bar = document.getElementById('progress');
+  const topBar = document.getElementById('top-bar');
+  const fill = document.getElementById('track-fill');
+  const steps = document.getElementById('steps');
+  const links = Array.prototype.slice.call(document.querySelectorAll('.top nav a'));
+  const sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+
+  function onScroll() {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.transform = 'scaleX(' + (max > 0 ? window.scrollY / max : 0) + ')';
+    topBar.classList.toggle('scrolled', window.scrollY > 8);
+    const r = steps.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (window.innerHeight * 0.85 - r.top) / (r.height + window.innerHeight * 0.3)));
+    fill.style.transform = 'scaleX(' + (REDUCE ? 1 : p) + ')';
+    let active = -1;
+    sections.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < window.innerHeight * 0.4) active = i; });
+    links.forEach(function (a, i) { a.classList.toggle('active', i === active); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  // Elementele aflate deja pe ecran la încărcare nu se animă
+  const items = document.querySelectorAll('.rv');
+  if (REDUCE || !('IntersectionObserver' in window)) { items.forEach(function (el) { el.classList.add('in'); }); return; }
+  const io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { rootMargin: '0px 0px -6% 0px' });
+  items.forEach(function (el, i) {
+    if (el.getBoundingClientRect().top < window.innerHeight) { el.classList.add('in'); return; }
+    el.style.transitionDelay = (i % 4) * 60 + 'ms';
+    io.observe(el);
+  });
+})();
+
+// Tableta 3D cu desen și metrici live
+(function () {
+  const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Ecranul tabletei: un canvas 2D folosit ca textură pe tableta 3D
+  const SW = 1200, SH = 800;
+  const SCREEN_MM = 250; // lățimea presupusă a ecranului, pentru conversia px -> mm
+  const PX_TO_MM = SCREEN_MM / SW;
+  const screen = document.createElement('canvas');
+  screen.width = SW; screen.height = SH;
+  const sx = screen.getContext('2d');
+
+  const COL_INK = '#b8641a', COL_PAUSE = '#5e7f6e';
+
+  let strokes = [];
+  let current = null;
+  let texture = null;
+
+  function paintBase() {
+    sx.fillStyle = '#fbf6ee';
+    sx.fillRect(0, 0, SW, SH);
+    sx.fillStyle = 'rgba(120, 90, 60, 0.12)';
+    for (let x = 30; x < SW; x += 40) for (let y = 30; y < SH; y += 40) sx.fillRect(x, y, 2, 2);
+    // Spirala de ghidaj
+    sx.save();
+    sx.strokeStyle = 'rgba(120, 90, 60, 0.3)';
+    sx.lineWidth = 2;
+    sx.setLineDash([6, 10]);
+    sx.beginPath();
+    for (let i = 0; i <= 600; i++) {
+      const u = i / 600, th = u * 4 * Math.PI * 2, r = 12 + u * 320;
+      const x = SW / 2 + r * Math.cos(th), y = SH / 2 + r * Math.sin(th);
+      if (i === 0) sx.moveTo(x, y); else sx.lineTo(x, y);
+    }
+    sx.stroke();
+    sx.restore();
+    sx.fillStyle = 'rgba(120, 90, 60, 0.55)';
+    sx.font = '500 22px "Geist Mono", monospace';
+    sx.fillText('ARCHIMEDES SPIRAL', 40, 56);
+  }
+
+  function segment(a, b) {
+    sx.save();
+    sx.lineCap = 'round';
+    sx.strokeStyle = COL_INK;
+    sx.shadowColor = 'rgba(184, 100, 26, 0.35)';
+    sx.shadowBlur = 8;
+    sx.lineWidth = 3 + 5 * (b.p || 0.5);
+    sx.beginPath(); sx.moveTo(a.x, a.y); sx.lineTo(b.x, b.y); sx.stroke();
+    sx.restore();
+  }
+  function liftMark(p) {
+    sx.save();
+    sx.fillStyle = COL_PAUSE;
+    sx.globalAlpha = 0.25; sx.beginPath(); sx.arc(p.x, p.y, 14, 0, Math.PI * 2); sx.fill();
+    sx.globalAlpha = 1; sx.beginPath(); sx.arc(p.x, p.y, 5, 0, Math.PI * 2); sx.fill();
+    sx.restore();
+  }
+  function touch() { if (texture) texture.needsUpdate = true; else if (fallbackCtx) blitFallback(); }
+
+  function clearAll() { strokes = []; current = null; paintBase(); touch(); metrics(); }
+
+  function beginStroke(p) {
+    if (strokes.length) liftMark(strokes[strokes.length - 1].pts.slice(-1)[0]);
+    current = { pts: [p] };
+    strokes.push(current);
+  }
+  function addPoint(p) {
+    if (!current) return;
+    const last = current.pts[current.pts.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < 0.5) return;
+    current.pts.push(p);
+    segment(last, p);
+  }
+  function endStroke() { current = null; }
+
+  // Metrici calculate din punctele desenate
+  const M = {
+    dur: document.getElementById('m-dur'), path: document.getElementById('m-path'), speed: document.getElementById('m-speed'),
+    cv: document.getElementById('m-cv'), lifts: document.getElementById('m-lifts'), air: document.getElementById('m-air'),
+    rate: document.getElementById('m-rate'), quality: document.getElementById('m-quality')
+  };
+  function metrics() {
+    let path = 0, speeds = [], air = 0, dts = [], drawTime = 0, samples = 0;
+    for (let s = 0; s < strokes.length; s++) {
+      const pts = strokes[s].pts;
+      samples += pts.length;
+      drawTime += (pts[pts.length - 1].t - pts[0].t) / 1000;
+      if (s > 0) { const prev = strokes[s - 1].pts; air += Math.max(0, pts[0].t - prev[prev.length - 1].t); }
+      for (let i = 1; i < pts.length; i++) {
+        const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y) * PX_TO_MM;
+        const dt = (pts[i].t - pts[i - 1].t) / 1000;
+        path += d;
+        if (dt > 0) dts.push(dt);
+        if (dt > 0.004) speeds.push(d / dt);
+      }
+    }
+    let dur = 0;
+    if (strokes.length) { const f = strokes[0].pts[0].t, l = strokes[strokes.length - 1].pts; dur = (l[l.length - 1].t - f) / 1000; }
+    const mean = speeds.length ? speeds.reduce(function (a, b) { return a + b; }, 0) / speeds.length : 0;
+    const sd = speeds.length ? Math.sqrt(speeds.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / speeds.length) : 0;
+    M.dur.innerHTML = dur.toFixed(1) + '<small>s</small>';
+    M.path.innerHTML = Math.round(path) + '<small>mm</small>';
+    M.speed.innerHTML = Math.round(mean) + '<small>mm/s</small>';
+    M.cv.innerHTML = (mean ? Math.round(sd / mean * 100) : 0) + '<small>%</small>';
+    M.lifts.textContent = String(Math.max(0, strokes.length - 1));
+    M.air.innerHTML = (air / 1000).toFixed(1) + '<small>s</small>';
+
+    // NOU: frecvența efectivă de eșantionare și calitatea capturii (din intervalele dintre puncte)
+    const rate = drawTime > 0.2 ? samples / drawTime : 0;
+    const mdt = dts.length ? dts.reduce(function (a, b) { return a + b; }, 0) / dts.length : 0;
+    const jitter = dts.length > 5 && mdt > 0 ? Math.sqrt(dts.reduce(function (a, b) { return a + (b - mdt) * (b - mdt); }, 0) / dts.length) / mdt : 0;
+    M.rate.innerHTML = Math.round(rate) + '<small>Hz</small>';
+    if (rate === 0) { M.quality.textContent = '–'; M.quality.className = ''; }
+    else if (rate >= 100 && jitter < 0.5) { M.quality.textContent = 'Good'; M.quality.className = 'q-good'; }
+    else if (rate >= 50) { M.quality.textContent = 'Fair'; M.quality.className = 'q-fair'; }
+    else { M.quality.textContent = 'Low'; M.quality.className = 'q-low'; }
+  }
+  let metricsQueued = false;
+  function queueMetrics() { if (metricsQueued) return; metricsQueued = true; requestAnimationFrame(function () { metricsQueued = false; metrics(); }); }
+
+  // Demo sintetic: spirală cu tremor de ~6 Hz și două ridicări de stilou (determinist)
+  const modeEl = document.getElementById('mode');
+  let demo = null;
+  function demoPoints() {
+    const pts = []; let t = 0;
+    for (let i = 0; i <= 900; i++) {
+      const u = i / 900, th = u * 4 * Math.PI * 2;
+      const speed = 0.85 + 0.3 * Math.sin(th * 0.7);
+      t += 16 / speed;
+      const trem = 6 * Math.sin(2 * Math.PI * 6 * t / 1000) * (0.5 + 0.5 * u);
+      const r = 12 + u * 320 + trem;
+      pts.push({ x: SW / 2 + r * Math.cos(th), y: SH / 2 + r * Math.sin(th), t: t, p: 0.5 + 0.2 * Math.sin(th), lift: i === 300 || i === 640 });
+    }
+    return pts;
+  }
+  const DEMO = demoPoints();
+  function setMode(user) {
+    modeEl.innerHTML = user ? '<b>LIVE</b> · your drawing, computed in this browser, nothing is stored' : '<b>DEMO</b> · synthetic trace · move over the tablet to take the stylus';
+  }
+  function startDemo() {
+    userMode = false;
+    clearAll(); setMode(false);
+    if (REDUCE) { runDemoTo(DEMO.length); demo = null; return; }
+    demo = { i: 0, wait: 600, offset: 0 };
+  }
+  function runDemoTo(n) {
+    let gap = 0;
+    for (let i = 0; i < n; i++) {
+      const p = DEMO[i];
+      const q = { x: p.x, y: p.y, t: p.t + gap, p: p.p };
+      if (i === 0) beginStroke(q);
+      else if (p.lift) { endStroke(); gap += 450; q.t += 450; beginStroke(q); }
+      else addPoint(q);
+    }
+    endStroke(); touch(); metrics();
+  }
+  function stepDemo(dt) {
+    if (!demo) return null;
+    if (demo.wait > 0) { demo.wait -= dt; return demo.i < DEMO.length ? DEMO[Math.min(demo.i, DEMO.length - 1)] : null; }
+    const n = Math.min(DEMO.length, demo.i + Math.max(1, Math.round(dt / 16 * 1.6)));
+    for (let i = demo.i; i < n; i++) {
+      const p = DEMO[i];
+      const q = { x: p.x, y: p.y, t: p.t + demo.offset, p: p.p };
+      if (i === 0) beginStroke(q);
+      else if (p.lift) { endStroke(); demo.offset += 450; q.t += 450; beginStroke(q); demo.i = i + 1; demo.wait = 450; touch(); queueMetrics(); return p; }
+      else addPoint(q);
+    }
+    demo.i = n;
+    touch(); queueMetrics();
+    if (demo.i >= DEMO.length) { endStroke(); demo = null; return null; }
+    return DEMO[demo.i - 1];
+  }
+  function stopDemo() { if (demo) { demo = null; } }
+
+  // NOU: când utilizatorul preia stiloul în timpul demo-ului, spirala demo se completează instant
+  function finishDemo() {
+    if (!demo) return;
+    stopDemo(); clearAll(); runDemoTo(DEMO.length);
+  }
+
+  let userMode = false;
+  document.getElementById('btn-clear').addEventListener('click', function () { stopDemo(); clearAll(); userMode = true; setMode(true); });
+  document.getElementById('btn-demo').addEventListener('click', startDemo);
+
+  // Intrare: evenimente de pointer, cu toate eșantioanele (getCoalescedEvents)
+  function onDown(pt) {
+    if (!userMode || demo) { stopDemo(); clearAll(); userMode = true; setMode(true); }
+    beginStroke(pt);
+    touch(); queueMetrics();
+  }
+  function samplesOf(e) { return (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e]; }
+  function pressureOf(ev) { return ev.pointerType === 'pen' && ev.pressure > 0 ? ev.pressure : 0.5; }
+
+  const stage = document.getElementById('stage');
+  let fallbackCtx = null, fallbackCanvas = null;
+  function blitFallback() { fallbackCtx.drawImage(screen, 0, 0, fallbackCanvas.width, fallbackCanvas.height); }
+
+  // Varianta 2D, dacă WebGL nu e disponibil
+  function useFallback() {
+    fallbackCanvas = document.createElement('canvas');
+    fallbackCanvas.className = 'fallback';
+    fallbackCanvas.width = SW; fallbackCanvas.height = SH;
+    fallbackCanvas.setAttribute('aria-label', 'Drawing surface: trace the spiral');
+    stage.insertBefore(fallbackCanvas, stage.firstChild);
+    fallbackCtx = fallbackCanvas.getContext('2d');
+    const toPt = function (ev) {
+      const r = fallbackCanvas.getBoundingClientRect();
+      return { x: (ev.clientX - r.left) / r.width * SW, y: (ev.clientY - r.top) / r.height * SH, t: ev.timeStamp, p: pressureOf(ev) };
+    };
+    let down = false;
+    fallbackCanvas.addEventListener('pointerdown', function (e) { down = true; fallbackCanvas.setPointerCapture(e.pointerId); onDown(toPt(e)); });
+    fallbackCanvas.addEventListener('pointermove', function (e) { if (!down) return; samplesOf(e).forEach(function (ev) { addPoint(toPt(ev)); }); touch(); queueMetrics(); });
+    const up = function () { if (down) { down = false; endStroke(); queueMetrics(); } };
+    fallbackCanvas.addEventListener('pointerup', up);
+    fallbackCanvas.addEventListener('pointercancel', up);
+    let last = 0;
+    (function loop(now) { const dt = last ? Math.min(now - last, 100) : 16; last = now; stepDemo(dt); requestAnimationFrame(loop); })(0);
+  }
+
+  paintBase();
+  metrics();
+
+  if (typeof THREE === 'undefined') { useFallback(); startDemo(); return; }
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (err) { useFallback(); startDemo(); return; }
+
+  // Scena 3D
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.domElement.className = 'gl';
+  renderer.domElement.setAttribute('aria-label', 'Interactive 3D tablet. Trace the spiral on its screen.');
+  stage.insertBefore(renderer.domElement, stage.firstChild);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+
+  // Lumini calde
+  scene.add(new THREE.AmbientLight(0xfff1e0, 0.8));
+  const key = new THREE.DirectionalLight(0xffffff, 1.0); key.position.set(3, 4, 6); scene.add(key);
+  const rim = new THREE.PointLight(0xffc58a, 1.4, 14); rim.position.set(-3.5, 2.5, -2); scene.add(rim);
+  const fillL = new THREE.PointLight(0xffe6c8, 0.5, 10); fillL.position.set(3, -3, 2); scene.add(fillL);
+
+  const tablet = new THREE.Group();
+  scene.add(tablet);
+
+  // MODIFICAT: corpul tabletei în mocha deschis
+  const TW = 3.1, TH = 2.12, R = 0.16;
+  const shape = new THREE.Shape();
+  shape.moveTo(-TW / 2 + R, -TH / 2);
+  shape.lineTo(TW / 2 - R, -TH / 2); shape.quadraticCurveTo(TW / 2, -TH / 2, TW / 2, -TH / 2 + R);
+  shape.lineTo(TW / 2, TH / 2 - R); shape.quadraticCurveTo(TW / 2, TH / 2, TW / 2 - R, TH / 2);
+  shape.lineTo(-TW / 2 + R, TH / 2); shape.quadraticCurveTo(-TW / 2, TH / 2, -TW / 2, TH / 2 - R);
+  shape.lineTo(-TW / 2, -TH / 2 + R); shape.quadraticCurveTo(-TW / 2, -TH / 2, -TW / 2 + R, -TH / 2);
+  const bodyGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.06, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 5, curveSegments: 16 });
+  bodyGeo.center();
+  const body = new THREE.Mesh(bodyGeo, new THREE.MeshStandardMaterial({ color: 0xa88a74, metalness: 0.45, roughness: 0.4 }));
+  tablet.add(body);
+
+  texture = new THREE.CanvasTexture(screen);
+  texture.encoding = THREE.sRGBEncoding;
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const SCR_W = 2.9, SCR_H = SCR_W * SH / SW;
+  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(SCR_W, SCR_H), new THREE.MeshBasicMaterial({ map: texture }));
+  screenMesh.position.z = 0.058;
+  tablet.add(screenMesh);
+
+  // NOU: plan invizibil, mai mare decât tableta, pe care stiloul urmărește cursorul/degetul și în afara ecranului
+  const followPlane = new THREE.Mesh(new THREE.PlaneGeometry(9, 7), new THREE.MeshBasicMaterial({ visible: false }));
+  followPlane.position.z = 0.058;
+  tablet.add(followPlane);
+
+  // Stiloul: vârful este originea grupului
+  const stylus = new THREE.Group();
+  const tilt = new THREE.Group();
+  const penMat = new THREE.MeshStandardMaterial({ color: 0xf3ebe0, metalness: 0.3, roughness: 0.3 });
+  const tipMat = new THREE.MeshStandardMaterial({ color: 0xb8641a, emissive: 0x4a2208, metalness: 0.2, roughness: 0.4 });
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 24), tipMat);
+  tip.rotation.x = -Math.PI / 2; tip.position.z = 0.07;
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.15, 24), penMat);
+  barrel.rotation.x = -Math.PI / 2; barrel.position.z = 0.14 + 0.575;
+  tilt.add(tip); tilt.add(barrel);
+  tilt.rotation.set(0.55, 0.45, 0);
+  stylus.add(tilt);
+  tablet.add(stylus);
+  const styHome = new THREE.Vector3(1.75, -0.6, 0.5);
+  stylus.position.copy(styHome);
+  const styTarget = styHome.clone();
+
+  // Încadrarea camerei după raportul containerului
+  function resize() {
+    const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    const fit = 3.9 / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
+    camera.position.set(0, 0, Math.max(5.4, fit));
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(renderer.domElement);
+  resize();
+
+  // Proiecția pointerului pe ecranul tabletei
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  function castFrom(ev) {
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set((ev.clientX - r.left) / r.width * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+  }
+  function hit(ev) { castFrom(ev); return ray.intersectObject(screenMesh)[0] || null; }
+  function toPt(h, ev) { return { x: h.uv.x * SW, y: (1 - h.uv.y) * SH, t: ev.timeStamp, p: pressureOf(ev) }; }
+
+  // NOU: poziția stiloului urmărește pointerul pe planul tabletei, limitată la marginile ecranului
+  function follow(ev, lifted) {
+    castFrom(ev);
+    const h = ray.intersectObject(followPlane)[0];
+    if (!h) return;
+    const local = tablet.worldToLocal(h.point.clone());
+    local.x = Math.max(-SCR_W / 2, Math.min(SCR_W / 2, local.x));
+    local.y = Math.max(-SCR_H / 2, Math.min(SCR_H / 2, local.y));
+    styTarget.set(local.x, local.y, lifted ? 0.22 : 0.06);
+  }
+
+  let drawing = false, pointerInside = false;
+  const look = new THREE.Vector2(0, 0);
+  const el = renderer.domElement;
+  el.addEventListener('pointerdown', function (e) {
+    pointerInside = true;
+    const h = hit(e);
+    follow(e, !h);
+    if (!h) return;
+    drawing = true;
+    el.setPointerCapture(e.pointerId);
+    onDown(toPt(h, e));
+  });
+  el.addEventListener('pointermove', function (e) {
+    const r = el.getBoundingClientRect();
+    look.set((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
+    // NOU: la prima mișcare deasupra tabletei, utilizatorul preia stiloul
+    if (!pointerInside) { pointerInside = true; finishDemo(); }
+    follow(e, !drawing);
+    if (!drawing) return;
+    // Toate eșantioanele intermediare se adaugă, apoi metricile se actualizează live
+    samplesOf(e).forEach(function (ev) { const hh = hit(ev); if (hh) addPoint(toPt(hh, ev)); });
+    touch(); queueMetrics();
+  });
+  const up = function (e) {
+    if (drawing) { drawing = false; endStroke(); queueMetrics(); styTarget.z = 0.22; }
+    if (e && e.pointerType !== 'mouse') { pointerInside = false; }
+  };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  el.addEventListener('pointerleave', function () { if (!drawing) { pointerInside = false; look.set(0, 0); } });
+
+  // Bucla de randare: plutire ușoară, paralaxă oprită în timpul desenului; tableta se înclină puțin la scroll
+  const base = { x: -0.24, y: -0.26 };
+  let last = 0, clock = 0;
+  function frame(now) {
+    const dt = last ? Math.min(now - last, 100) : 16; last = now; clock += dt;
+    const dp = stepDemo(dt);
+    // MODIFICAT: stiloul revine în poziția de repaus doar când pointerul nu e deasupra tabletei
+    if (dp && !pointerInside) styTarget.set((dp.x / SW - 0.5) * SCR_W, (0.5 - dp.y / SH) * SCR_H, demo && demo.wait > 0 ? 0.22 : 0.06);
+    else if (!pointerInside && !drawing && !demo) styTarget.copy(styHome);
+    stylus.position.lerp(styTarget, REDUCE ? 1 : 0.25);
+    const scrollTilt = REDUCE ? 0 : Math.min(1, window.scrollY / Math.max(1, window.innerHeight)) * 0.35;
+    if (!drawing && !demo) {
+      const fx = REDUCE ? 0 : Math.sin(clock / 1600) * 0.03;
+      tablet.rotation.x += ((base.x - scrollTilt + look.y * 0.12 + fx) - tablet.rotation.x) * 0.06;
+      tablet.rotation.y += ((base.y + look.x * 0.16) - tablet.rotation.y) * 0.06;
+      tablet.position.y += ((REDUCE ? 0 : Math.sin(clock / 1300) * 0.04) - tablet.position.y) * 0.1;
+    } else {
+      tablet.rotation.x += (base.x - scrollTilt - tablet.rotation.x) * 0.08;
+      tablet.rotation.y += (base.y - tablet.rotation.y) * 0.08;
+    }
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  startDemo();
+})();
+</script>

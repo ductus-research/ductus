@@ -1,0 +1,23 @@
+# Rulează testele bibliotecii de metrici la fiecare pull request care o modifică
+name: metrics
+
+on:
+  pull_request:
+    paths: ["packages/metrics/**"]
+  push:
+    branches: [main]
+    paths: ["packages/metrics/**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/metrics
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: pytest

@@ -1,0 +1,12 @@
+# Înlocuiți @utilizator-1 ... @utilizator-4 cu numele de utilizator GitHub ale membrilor echipei.
+# Proprietarul unui folder este cerut automat ca reviewer pentru modificările din acel folder.
+
+*                   @utilizator-1 @utilizator-2 @utilizator-3 @utilizator-4
+
+/apps/capture/      @utilizator-1
+/services/api/      @utilizator-2
+/infra/             @utilizator-2
+/services/dsp/      @utilizator-3
+/packages/metrics/  @utilizator-3
+/apps/portal/       @utilizator-4
+/site/              @utilizator-4

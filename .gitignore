@@ -1,0 +1,47 @@
+# ---------- Date: NICIODATĂ date reale în repo ----------
+data/
+datasets/
+*.csv
+*.parquet
+*.h5
+!packages/metrics/tests/fixtures/*.csv
+
+# ---------- Secrete și configurări locale ----------
+.env
+.env.*
+!.env.example
+local.settings.json
+*.pem
+*.key
+*.pfx
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# ---------- Node / frontend ----------
+node_modules/
+.next/
+.vite/
+coverage/
+*.log
+
+# ---------- Azure ----------
+.azure/
+bin/
+obj/
+
+# ---------- Editor / OS ----------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
